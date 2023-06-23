@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tweets</title>
+    <!-- Add Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.1/css/bootstrap.min.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="mt-5">Tweets</h1>
+      <div id="tweet-container" class="mt-4">
+        <!-- Here, we will dynamically add the tweet cards using Javascript -->
+      </div>
+      <br>
+
+      <!-- The following form is only visible if the user is logged in -->
+      <div id="create-tweet-form-container" style="display: none;">
+        <h2>Create a new tweet</h2>
+        <form id="create-tweet-form">
+          <div class="mb-3">
+            <label for="tweet-content" class="form-label">Tweet Content:</label>
+            <textarea id="tweet-content" name="tweet-content" class="form-control" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Create Tweet</button>
+        </form>
+      </div>
+      <br>
+    </div>
+
+    <!-- Add Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.1/js/bootstrap.min.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      $(document).ready(() => {
+        const tweetContainer = $("#tweet-container");
+
+        // Function to fetch all tweets and display them on the page
+        const fetchTweets = () => {
+          $.get("gettweets.php", (data) => {
+            const tweets = JSON.parse(data);
+            tweetContainer.empty();
+            for (const tweet of tweets) {
+              tweetContainer.append(`
+                <div class="card mb-3">
+                  <div class="card-header">
+                    <h3>${tweet.firstname} ${tweet.lastname}</h3>
+                    <span>${new Date(tweet.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div class="card-body">
+                    <p>${tweet.content}</p>
+                  </div>
+                  ${
+                    tweet.is_mine
+                    ? `<div class="card-footer">
+                        <button class="delete-btn btn btn-danger" data-tweetid="${tweet.id}">Delete</button>
+                      </div>`
+                    : ``
+                  }
+                </div>
+              `);
+            }
+          });
+        };
+
+        // Fetch tweets on page load
+        fetchTweets();
+
+        // Function to toggle the create tweet form visibility
+        const toggleCreateTweetFormVisibility = () => {
+          const formContainer = $("#create-tweet-form-container");
+          if (formContainer.css("display") === "none") {
+            formContainer.css("display", "block");
+          } else {
+            formContainer.css("display", "none");
+          }
+        };
+
+        // If the user is logged in, show the create tweet form
+        if (isLoggedIn()) {
+          $("#create-tweet-form-container").css("display", "block");
+        }
+
+        // Show/hide the create tweet form when the "create tweet" button is clicked
+        $("#create-tweet-btn").click(toggleCreateTweetFormVisibility);
+
+        // Function to check if the user is logged in
+        function isLoggedIn() {
+          // Implement this function in your API endpoint or session management system
+          return true; // For demo purposes only
+        }
+
+        // Handle submit event of create tweet form
+        $("#create-tweet-form").submit((event) => {
+          event.preventDefault();
+          const content = $("#tweet-content").
+          val();
+          $.post("createtweet.php", { content }, () => {
+            // Refresh the tweet list
+            fetchTweets();
+            // Clear the tweet content input
+            $("#tweet-content").val("");
+          });
+        });
+
+        // Handle click event of delete buttons
+        tweetContainer.on("click", ".delete-btn", (event) => {
+          const tweetId = $(event.target).data("tweetid");
+          $.post("deletetweet.php", { id: tweetId }, () => {
+            // Refresh the tweet list
+            fetchTweets();
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
+
